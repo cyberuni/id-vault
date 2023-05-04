@@ -10,7 +10,7 @@
     "lint": "run-p lint:*",
     "lint:repos": "turbo run lint",
     "lint:root": "cross-env TIMING=1 eslint --ext=js,cjs,mjs,ts,tsx,ctx,mtx,yaml,yml .",
-    "nl": "pnpm --filter=./packages/node-library",
+    "id": "pnpm --filter=./packages/id-vault",
     "nuke:root": "rimraf node_modules",
     "nuke": "turbo run nuke && pnpm nuke:root",
     "prepack": "pinst --disable",

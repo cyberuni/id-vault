@@ -2,7 +2,7 @@
 	"files": [],
 	"references": [
 		{
-			"path": "packages/node-library"
+			"path": "packages/id-vault"
 		}
 	]
 }
