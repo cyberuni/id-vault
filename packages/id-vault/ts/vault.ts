@@ -1,7 +1,7 @@
 import { encoder } from './encoder.js'
 
-export function createVault(seed: string) {
-	const encode = encoder('SHA-256')
+export function createVault(seed: string, algorithm = 'SHA-256') {
+	const encode = encoder(algorithm)
 	let intruded = false
 
 	return {
@@ -13,7 +13,7 @@ export function createVault(seed: string) {
 			if (intruded) throw new Error('Intruded')
 			const [name, digest] = id.split(':', 2)
 			const d = await encode(`${seed}:${name}`)
-			if (`${d}` !== digest) {
+			if (d !== digest) {
 				intruded = true
 				throw new Error('Invalid ID')
 			}
