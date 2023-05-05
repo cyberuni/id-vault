@@ -44,7 +44,7 @@
     "cjs",
     "esm",
     "ts",
-    "!**/*.{spec,unit,test,accept,integrate,system,pref,stress}.*"
+    "!**/*.{spec,unit,test,accept,integrate,system,perf,stress}.*"
   ],
   "scripts": {
     "build": "run-p build:cjs build:esm build:tslib",
