@@ -27,17 +27,17 @@ But you still want to be able to share data and code so that each component can 
 The solution is to provide a store by the host,
 and each module can use the store to share data and code.
 
-This vault is used by the store to ensure only the modules with access to the seed can access the store.
+This vault can be used by the store to ensure only the modules with access to the seed can access the store.
 
 The following is an example using [stable-store]:
 
 ```ts
 // host
 import { createVault } from 'id-vault'
-import { setIDAssertion } from 'stable-store'
+import { registerIDAssertion } from 'stable-store'
 
 const vault = createVault(seed)
-setIDAssertion(vault.assertID)
+registerIDAssertion(vault.assertID)
 
 // module
 import { createVault } from 'id-vault'
@@ -51,6 +51,20 @@ const store = getStore(id, { foo: 'bar' })
 // bad guy
 const store = getStore('some-other-id') // throws
 ```
+
+The vault will be disabled if it ever encounter an invalid id to prevent any brute force attempts.
+
+`createVault(seed, options)` takes an additional option.
+
+- `options.encode`: specify an alternative encode function. By default, the vault uses `sha-256`.
+- `options.scope`: specify a scope to validate.\
+  The vault will validate ID with the same scope and ignores others.\
+  This is useful when the vault is used in some shared code such as in [stable-store].
+
+It goes without saying,
+the vault which creates ID and the vault which asserts the ID must be created with the same seed, encode function, and scope.
+
+Of course, you can also randomize them.
 
 ## Install
 
