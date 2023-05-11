@@ -5,21 +5,51 @@
 
 [id-vault] provides a secure ID generation and validation mechanism.
 
-It allows one module to generate an ID and another module to validate the ID is valid.
-
 ## Usage
 
+To use this vault,
+the modules first share a some common secret out-of-band, the seed.
+
+It can be a random string generated during build time, load time, or both.
+
+Each module then creates a vault using the seed,
+and use the vault to create or assert the id.
+
+An example of using this vault is an MFE application using WebComponents.
+
+Since it using WebComponents,
+you can't use DOM attached states such as React Context to pass code from the host to the components.
+
+At the same time, you also want to avoid relying on props as it is fragile.
+
+But you still want to be able to share data and code so that each component can use the same data and code even if they are loaded from different bundles (or even different versions).
+
+The solution is to provide a store by the host,
+and each module can use the store to share data and code.
+
+This vault is used by the store to ensure only the modules with access to the seed can access the store.
+
+The following is an example using [stable-store]:
+
 ```ts
+// host
 import { createVault } from 'id-vault'
+import { setIDAssertion } from 'stable-store'
 
-// the seed is a random string
 const vault = createVault(seed)
+setIDAssertion(vault.assertID)
 
-// generate a new ID
-const id = vault.createID('some-key')
+// module
+import { createVault } from 'id-vault'
+import { getStore } from 'stable-store'
 
-// assert the ID is valid
-vault.assertID(id)
+const vault = createVault(seed)
+const id = vault.createID('my-module.v1.store-key')
+
+const store = getStore(id, { foo: 'bar' })
+
+// bad guy
+const store = getStore('some-other-id') // throws
 ```
 
 ## Install
