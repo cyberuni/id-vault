@@ -82,6 +82,7 @@ pnpm install id-vault
 rush add -p id-vault
 ```
 
-[downloads-image]: https://img.shields.io/npm/dm/unional/id-vault.svg?style=flat
-[npm-image]: https://img.shields.io/npm/v/unional/id-vault.svg?style=flat
-[npm-url]: https://npmjs.org/package/unional/id-vault
+[downloads-image]: https://img.shields.io/npm/dm/id-vault.svg?style=flat
+[npm-image]: https://img.shields.io/npm/v/id-vault.svg?style=flat
+[npm-url]: https://npmjs.org/package/id-vault
+[id-vault]: https://github.com/cyberuni/id-vault
