@@ -4,3 +4,5 @@ packages:
 allowBuilds:
   '@swc/core': true
   turbo: true
+
+  fsevents: true
