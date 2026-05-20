@@ -7,16 +7,8 @@ on:
 jobs:
   code:
     uses: cyberuni/.github/.github/workflows/pnpm-verify.yml@main
-    with:
-      pnpm-version: 8.3.1
 
   release:
     uses: cyberuni/.github/.github/workflows/pnpm-release-changeset.yml@main
     needs: code
     secrets: inherit
-    with:
-      pnpm-version: 8.3.1
-
-  # docgen:
-  #     uses: unional/.github/.github/workflows/pnpm-docs.yml@main
-  #     needs: release
