@@ -4,6 +4,8 @@
     "@repobuddy/typescript/tsconfig/modules/buddy-commonjs.json"
   ],
   "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "outDir": "cjs"
   },
   // excluding test files as they might contain platform specific code,
