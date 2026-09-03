@@ -9,10 +9,18 @@ allowBuilds:
 # Supply-chain soak: refuse packages published less than 24h ago, so a compromised
 # release has a window to be caught and unpublished before it reaches a build.
 #
-# This must live here, not in .npmrc. pnpm only auto-enables STRICT soak mode when
-# the setting comes from pnpm-workspace.yaml / config.yaml / CLI / env; a value in
-# .npmrc runs in LOOSE mode, where a too-young package is silently appended to
-# minimumReleaseAgeExclude and installed anyway. minimumReleaseAgeStrict is set
-# explicitly so the enforcement does not depend on that inference.
+# This must live here, not in .npmrc, where it used to be. pnpm 11 does not read
+# minimumReleaseAge from .npmrc AT ALL — `pnpm config get minimumReleaseAge` in such
+# a repo answers `undefined` — so the value there was inert and the build silently ran
+# pnpm's built-in default instead of the configured one. The setting is only picked up
+# from pnpm-workspace.yaml / config.yaml / CLI / env.
+#
+# Reading it from one of those sources also auto-enables STRICT mode, but that is left
+# implicit by pnpm, so minimumReleaseAgeStrict is set explicitly rather than inferred.
+# The distinction is load-bearing: in LOOSE mode a too-young package is appended to
+# minimumReleaseAgeExclude and installed anyway, so the policy reports rather than
+# enforces. Verified against the pinned pnpm@11.1.3 by raising the cutoff to 10 years:
+# strict fails the install and writes no lockfile, loose exits 0 and installs
+# everything. `minimumReleaseAgeStrict` has been supported since pnpm 11.0.0.
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
