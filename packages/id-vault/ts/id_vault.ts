@@ -41,7 +41,7 @@ export function createIDVault(seed: string, { encode, scope }: IDVaultOptions = 
 	function assertToken(id: string, name: string | undefined, digest: string | undefined) {
 		if (enc(`${seed}:${name}`) !== digest) {
 			intrudedId = id
-			listeners.forEach(l => l(intrudedId))
+			for (const listener of listeners) listener(intrudedId)
 			throw new Error(`Detected invalid id: ${id}`)
 		}
 	}
@@ -53,18 +53,18 @@ export function createIDVault(seed: string, { encode, scope }: IDVaultOptions = 
 			return scope ? `${scope}:${name}:${token}` : `${name}:${token}`
 		},
 		assertID: scope
-			? function (id: string) {
+			? (id: string) => {
 					assertNotIntruded(intrudedId)
 					const [scopePart, name, digest] = id.split(':', 3)
 					if (scopePart !== scope) return
 					assertToken(id, name, digest)
-			  }
-			: function (id: string) {
+				}
+			: (id: string) => {
 					assertNotIntruded(intrudedId)
 					const [name, digest, extra] = id.split(':', 3)
 					if (extra) return
 					assertToken(id, name, digest)
-			  },
+				},
 		detectedInvalidID(listener: (id: string) => void) {
 			listeners.push(listener)
 		}

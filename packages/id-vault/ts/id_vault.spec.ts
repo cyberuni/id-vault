@@ -1,7 +1,6 @@
-import { expect, it } from '@jest/globals'
 import { a } from 'assertron'
-import { createIDVault } from './index.js'
 import crypto from 'crypto-js'
+import { createIDVault } from './index.js'
 
 it('creates an id', () => {
 	const vault = createIDVault('seed')
@@ -22,7 +21,7 @@ it('creates different ids for different seeds', () => {
 	const set = new Set()
 	for (let i = 0; i < 100; i++) {
 		const vault = createIDVault(`seed${i}`)
-		set.add(vault.createID(`name`))
+		set.add(vault.createID('name'))
 	}
 	expect(set.size).toBe(100)
 })
@@ -36,7 +35,7 @@ it('asserts an id is valid', () => {
 it('throws when it is an invalid id', () => {
 	const vault = createIDVault('seed')
 	const err = a.throws(() => vault.assertID('some-invalid-id'))
-	expect(err.message).toBe(`Detected invalid id: some-invalid-id`)
+	expect(err.message).toBe('Detected invalid id: some-invalid-id')
 })
 
 it('throws when it is an invalid id (different seed)', () => {
@@ -48,7 +47,7 @@ it('throws when it is an invalid id (different seed)', () => {
 
 it('can specify algorithm', () => {
 	const vault = createIDVault('some seed', {
-		encode: id => crypto.SHA1(id).toString()
+		encode: (id) => crypto.SHA1(id).toString()
 	})
 	const id = vault.createID('name')
 	expect(id).toBe('name:859df0c6508f53df229d359a6f7f0c3fa8bdcb6e')
@@ -90,14 +89,14 @@ it("will always throw after it's an invalid id was used", () => {
 it('can be listened for invalid id event', () => {
 	expect.assertions(1)
 	const vault = createIDVault('seed')
-	vault.detectedInvalidID(id => expect(id).toBe('invalid'))
+	vault.detectedInvalidID((id) => expect(id).toBe('invalid'))
 	a.throws(() => vault.assertID('invalid'))
 })
 
 it('can be listened multiple times', () => {
 	expect.assertions(2)
 	const vault = createIDVault('seed')
-	vault.detectedInvalidID(id => expect(id).toBe('invalid'))
-	vault.detectedInvalidID(id => expect(id).toBe('invalid'))
+	vault.detectedInvalidID((id) => expect(id).toBe('invalid'))
+	vault.detectedInvalidID((id) => expect(id).toBe('invalid'))
 	a.throws(() => vault.assertID('invalid'))
 })
