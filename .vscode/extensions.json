@@ -2,7 +2,7 @@
 	"recommendations": [
 		"aaron-bond.better-comments",
 		"streetsidesoftware.code-spell-checker",
-		"dbaeumer.vscode-eslint",
+		"biomejs.biome",
 		"yzhang.markdown-all-in-one",
 		"davidanson.vscode-markdownlint"
 	]

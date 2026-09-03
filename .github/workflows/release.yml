@@ -7,6 +7,10 @@ on:
 jobs:
   code:
     uses: cyberuni/.github/.github/workflows/pnpm-verify.yml@main
+    with:
+      os: '["ubuntu-latest"]'
+      skip-playwright: true
+      skip-codecov: true
 
   release:
     uses: cyberuni/.github/.github/workflows/pnpm-release-changeset.yml@main

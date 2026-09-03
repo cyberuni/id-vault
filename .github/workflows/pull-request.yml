@@ -7,3 +7,13 @@ on:
 jobs:
   code:
     uses: cyberuni/.github/.github/workflows/pnpm-verify.yml@main
+    with:
+      # cyberuni's verify defaults to 3 OS x 2 Node. This is a pure-TS library with no
+      # platform-specific behaviour, so ubuntu alone is the honest coverage — and it
+      # sidesteps that workflow's unconditional Xvfb step, which has no counterpart on
+      # the macOS and Windows runners.
+      os: '["ubuntu-latest"]'
+      # No browser tests; the browser encoder is exercised under jsdom.
+      skip-playwright: true
+      # Codecov is not wired up here; a stale codecov context would just block merges.
+      skip-codecov: true

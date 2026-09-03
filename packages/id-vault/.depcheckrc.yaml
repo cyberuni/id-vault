@@ -1,0 +1,5 @@
+ignores:
+  # Used by `pnpm clean` / `pnpm nuke`, which depcheck does not read.
+  - rimraf
+  # The jsdom environment is loaded by name from vitest.config.ts, not imported.
+  - jsdom
