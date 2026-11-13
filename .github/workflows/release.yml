@@ -13,6 +13,10 @@ jobs:
       skip-codecov: true
 
   release:
-    uses: cyberuni/.github/.github/workflows/pnpm-release-changeset.yml@main
+    uses: cyberuni/.github/.github/workflows/pnpm-release-changeset-oidc.yml@main
     needs: code
-    secrets: inherit
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      actions: write
