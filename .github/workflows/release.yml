@@ -12,9 +12,15 @@ jobs:
       skip-playwright: true
       skip-codecov: true
 
+  publish-gate:
+    uses: cyberuni/.github/.github/workflows/pnpm-publish-gate.yml@main
+    needs: code
+    permissions:
+      contents: read
+
   release:
     uses: cyberuni/.github/.github/workflows/pnpm-release-changeset-oidc.yml@main
-    needs: code
+    needs: [code, publish-gate]
     permissions:
       id-token: write
       contents: write
