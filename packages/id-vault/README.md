@@ -36,74 +36,92 @@ Share the seed out of band, for example at build time or at load time.
 The vault does not generate the seed.
 Use a long random value, and keep it away from code you do not trust.
 
-The `scope` option is meant for shared code that checks IDs on behalf of others, such as [stable-store].
+The `scope` option lets one check site serve several vaults.
+For example, one function passed as the [stable-store] `keyAssertion` of stores that different vaults guard.
+See [Checking IDs for several vaults](#checking-ids-for-several-vaults).
 
 ## API
 
 ### `createIDVault(seed, options?)`
 
-Returns a frozen vault object with three methods.
+Returns a frozen vault object.
 Every vault that creates or checks the same IDs needs the same `seed`, `encode`, and `scope`.
 
-Options:
+Options (type `IDVaultOptions`):
 
 - `encode: (input: string) => string`: the function that turns the seed and the name into a token.
   It defaults to SHA-256, returned as 64 lowercase hex characters.
+  The token must not contain `:`.
 - `scope: string`: a prefix for the IDs this vault creates and checks.
-  An empty string means no scope.
+  It throws a `TypeError` if `scope` is an empty string.
+  A scope may contain `:`.
 
 ### `vault.createID(name)`
 
 Returns `name:token`, or `scope:name:token` when the vault has a scope.
 The token is `encode(seed + ':' + name)`.
+A name may contain `:`.
 
-It throws if the vault is disabled.
+It throws if the vault is disabled, or if `encode` returns a token that contains `:`.
 
 ### `vault.assertID(id)`
 
-Returns if the ID is valid, or if the vault does not check it.
-Throws `Error('Detected invalid id: <id>')` if the token does not match.
+Returns if this vault created the ID, or a vault with the same seed, `encode`, and `scope`.
+Otherwise it throws `Error('Detected invalid id: <id>')` and disables the vault.
 
-A vault without a scope checks IDs that have at most one `:`.
-It returns without checking any ID with two or more `:` characters.
-
-A vault with a scope checks only IDs that start with `scope:`.
-It returns without checking any other ID.
-
-So `assertID` does not reject everything that was not created by the vault.
-Check the ID format yourself before you rely on it.
+That includes every ID of another scope, and every scoped ID passed to a vault without a scope.
+The last `:` in the ID separates the token from the rest.
+Tokens are compared in constant time.
 
 It throws if the vault is disabled.
 
-### `vault.detectedInvalidID(listener)`
+### `vault.isOwnID(id)`
 
-Registers `listener(invalidId)`.
+Returns `true` if the ID starts with `scope:`.
+A vault without a scope returns `true` for every ID.
+It does not check the token, and it never disables the vault.
+
+### `vault.onInvalidID(listener)`
+
+Registers `listener(invalidId)` and returns a function that removes it.
 The listeners run in order when `assertID` first finds an invalid ID, before `assertID` throws.
 
-If a listener throws, that error replaces the `assertID` error and the remaining listeners do not run.
-There is no way to remove a listener.
+A listener that throws does not stop the others, and does not replace the `assertID` error.
+Its error goes to `console.error`.
+
+`vault.detectedInvalidID(listener)` is a deprecated alias.
+
+## Checking IDs for several vaults
+
+A shared check site that serves several vaults picks the vault with `isOwnID`, then calls its `assertID`.
+Reject an ID that no vault claims.
+
+```ts
+const vaults = [createIDVault(seedA, { scope: 'a' }), createIDVault(seedB, { scope: 'b' })]
+
+function checkID(id: string) {
+	const vault = vaults.find((v) => v.isOwnID(id))
+	if (!vault) throw new Error(`unknown id: ${id}`)
+	vault.assertID(id)
+}
+```
+
+Before version 2, `assertID` returned without checking an ID of another scope.
+A check site that ran every vault's `assertID` on every ID accepted any ID that no vault claimed.
 
 ## Disabling
 
-The first invalid ID disables the vault.
+The first invalid ID disables the vault, including `''`.
 After that, `createID` and `assertID` throw `Error('vault disabled as invalid id was detected: <id>')`.
 Create a new vault to recover.
 
 Any code that can reach `assertID` can disable the vault for everyone who shares it.
 
-An empty string is the exception.
-`assertID('')` throws and runs the listeners, but it does not disable the vault.
-
 ## Limits
 
-- A name that contains `:` does not work with a scoped vault.
-  `createID('a:b')` returns an ID that the same vault rejects, and the rejection disables the vault.
-- A scope that contains `:` makes `assertID` skip every ID.
-- Without a scope, a name that contains `:` gives an ID that `assertID` skips.
 - The token does not include the scope.
   The same seed and name give the same token in every scope.
 - The default token is `SHA-256(seed + ':' + name)`, not an HMAC.
-- `assertID` compares tokens with `!==`, not in constant time.
 
 ## Platforms
 

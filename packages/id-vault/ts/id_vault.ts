@@ -1,17 +1,19 @@
+import { constantTimeEqual } from './constant_time_equal.js'
 import { encodeSHA256 } from './encoder.js'
 
-type IDVaultOptions = {
+export type IDVaultOptions = {
 	/**
 	 * Alternate encoder function.
 	 * Defaults to encode with SHA256.
+	 *
+	 * The output must not contain `:`.
 	 */
 	encode?: (id: string) => string
 	/**
-	 * Optional scope.
+	 * Optional scope, a non-empty string that prefixes every ID the vault creates.
 	 *
-	 * The vault will assert against IDs with the same scope.
-	 * This is useful if the IDs are validated by some shared code,
-	 * such as the use case in [stable-store](https://npmjs.org/package/stable-store).
+	 * Use `isOwnID()` to tell IDs of this scope apart from other IDs,
+	 * for example when shared code checks IDs on behalf of several vaults.
 	 */
 	scope?: string
 }
@@ -19,7 +21,7 @@ type IDVaultOptions = {
 /**
  * Create a vault for ID.
  *
- * This can be used as a fundation to share secret between two isolated code.
+ * This can be used as a foundation to share secret between two isolated code.
  * The seed can be shared between the code during build time or load time.
  *
  * As long as other code does not have access to the seed,
@@ -27,52 +29,74 @@ type IDVaultOptions = {
  *
  * @example
  * ```ts
- * const vault = createVault('some seed')
+ * const vault = createIDVault('some seed')
  * const id = vault.createID('name')
  * vault.assertID(id)
  * ```
  */
 export function createIDVault(seed: string, { encode, scope }: IDVaultOptions = {}): IDVault {
+	if (scope === '') throw new TypeError('scope must be a non-empty string')
+
 	const enc = encode ?? encodeSHA256
+	const prefix = scope === undefined ? '' : `${scope}:`
 	const listeners: Array<(id: string) => void> = []
 
-	let intrudedId: string
+	let disabled = false
+	let intrudedId = ''
 
-	function assertToken(id: string, name: string | undefined, digest: string | undefined) {
-		if (enc(`${seed}:${name}`) !== digest) {
-			intrudedId = id
-			for (const listener of listeners) listener(intrudedId)
-			throw new Error(`Detected invalid id: ${id}`)
+	function assertNotDisabled() {
+		if (disabled) throw new Error(`vault disabled as invalid id was detected: ${intrudedId}`)
+	}
+
+	function reject(id: string): never {
+		disabled = true
+		intrudedId = id
+		for (const listener of listeners.slice()) {
+			try {
+				listener(id)
+			} catch (e) {
+				console.error(e)
+			}
+		}
+		throw new Error(`Detected invalid id: ${id}`)
+	}
+
+	function isOwnID(id: string) {
+		return id.startsWith(prefix)
+	}
+
+	function onInvalidID(listener: (invalidId: string) => void) {
+		const entry = (id: string) => listener(id)
+		listeners.push(entry)
+		return () => {
+			const i = listeners.indexOf(entry)
+			if (i >= 0) listeners.splice(i, 1)
 		}
 	}
 
 	return Object.freeze({
 		createID(name: string) {
-			assertNotIntruded(intrudedId)
+			assertNotDisabled()
 			const token = enc(`${seed}:${name}`)
-			return scope ? `${scope}:${name}:${token}` : `${name}:${token}`
+			if (token.includes(':')) throw new Error('encode() returned a token that contains ":"')
+			return `${prefix}${name}:${token}`
 		},
-		assertID: scope
-			? (id: string) => {
-					assertNotIntruded(intrudedId)
-					const [scopePart, name, digest] = id.split(':', 3)
-					if (scopePart !== scope) return
-					assertToken(id, name, digest)
-				}
-			: (id: string) => {
-					assertNotIntruded(intrudedId)
-					const [name, digest, extra] = id.split(':', 3)
-					if (extra) return
-					assertToken(id, name, digest)
-				},
-		detectedInvalidID(listener: (id: string) => void) {
-			listeners.push(listener)
-		}
+		assertID(id: string) {
+			assertNotDisabled()
+			if (!isOwnID(id)) reject(id)
+			const rest = id.slice(prefix.length)
+			// The token never contains `:`, so the last `:` ends the name.
+			// The name itself may contain `:`.
+			const i = rest.lastIndexOf(':')
+			if (i < 0) reject(id)
+			const name = rest.slice(0, i)
+			const digest = rest.slice(i + 1)
+			if (!constantTimeEqual(enc(`${seed}:${name}`), digest)) reject(id)
+		},
+		isOwnID,
+		onInvalidID,
+		detectedInvalidID: onInvalidID
 	})
-}
-
-function assertNotIntruded(intrudedId: string) {
-	if (intrudedId) throw new Error(`vault disabled as invalid id was detected: ${intrudedId}`)
 }
 
 export type IDVault = {
@@ -86,7 +110,7 @@ export type IDVault = {
 	 *
 	 * @example
 	 * ```ts
-	 * const vault = createVault('some seed')
+	 * const vault = createIDVault('some seed')
 	 * const id = vault.createID('name')
 	 *
 	 * const store = getStore(id)
@@ -96,11 +120,14 @@ export type IDVault = {
 	/**
 	 * Assert the ID is valid.
 	 *
+	 * Throws on every ID this vault did not create, including IDs of another scope.
+	 * The first invalid ID disables the vault.
+	 *
 	 * This is typically used by the provider of some resources.
 	 *
 	 * @example
 	 * ```ts
-	 * const vault = createVault('some seed')
+	 * const vault = createIDVault('some seed')
 	 * setIDAssertion(vault.assertID)
 	 *
 	 * // consumer code
@@ -109,19 +136,42 @@ export type IDVault = {
 	 */
 	assertID(id: string): void
 	/**
+	 * Tell whether the ID has this vault's scope, without checking its token.
+	 *
+	 * A vault without a scope returns `true` for every ID.
+	 * Use this in shared code that routes IDs to several vaults,
+	 * and reject an ID that no vault claims.
+	 *
+	 * @example
+	 * ```ts
+	 * const vault = vaults.find(v => v.isOwnID(id))
+	 * if (!vault) throw new Error('unknown id')
+	 * vault.assertID(id)
+	 * ```
+	 */
+	isOwnID(id: string): boolean
+	/**
 	 * Listen to the first invalid ID being detected.
 	 *
 	 * This event will only be fired once,
 	 * as the vault will be disabled after the first invalid ID is detected.
+	 * A listener that throws does not stop the other listeners;
+	 * its error goes to `console.error`.
 	 *
 	 * This is useful for some centralized code (e.g. monitoring) to detect such violation occurs,
 	 * even if the consuming code ignores the error.
 	 *
+	 * @returns A function that removes the listener.
+	 *
 	 * @example
 	 * ```ts
-	 * const vault = createVault('some seed')
-	 * vault.detectedInvalidID(invalidId => ...do something about it...)
+	 * const vault = createIDVault('some seed')
+	 * const off = vault.onInvalidID(invalidId => ...do something about it...)
 	 * ```
 	 */
-	detectedInvalidID(listener: (invalidId: string) => void): void
+	onInvalidID(listener: (invalidId: string) => void): () => void
+	/**
+	 * @deprecated Use `onInvalidID()`.
+	 */
+	detectedInvalidID(listener: (invalidId: string) => void): () => void
 }
