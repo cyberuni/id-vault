@@ -56,7 +56,8 @@ async function bundleForBrowser(file: string, source: string) {
 // crypto-js has a guarded `require('crypto')` of its own, which its `browser` field maps
 // to an empty module (Vite emits `__vite-browser-external`). Check only for the node encoder.
 function expectBrowserEncoder(code: string) {
-	expect(code).not.toMatch(/node:crypto|createHash/)
+	// Match the module specifier and the call, not prose: doc comments may mention `node:crypto`.
+	expect(code).not.toMatch(/["']node:crypto["']|\bcreateHash\(/)
 	expect(code).toContain('CryptoJS')
 }
 
