@@ -67,6 +67,5 @@ common/autoinstallers/*/.npmrc
 # project specific
 .pnpm-store
 .turbo
-cjs/
 esm/
 *.tsbuildinfo

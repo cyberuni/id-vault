@@ -32,7 +32,8 @@ The reasoning and the experiments behind this are in [`.research/id-vault-design
 npm install id-vault
 ```
 
-It needs node 20.19 or later.
+The package is ESM only.
+It needs node 20.19 or later, the floor that its dependency `@noble/hashes` 2.x sets.
 It runs in browsers with no `node:crypto` and no polyfill.
 
 ## Key vault
@@ -243,9 +244,13 @@ If you need another construction, build it on your side of the vault.
 
 ## Platforms
 
-The package ships ESM (`esm/`) and CommonJS (`cjs/`) builds with type declarations.
-Both depend on `@noble/hashes`, which is ESM only.
-The CommonJS build loads it with `require()`, which node supports from 20.19.
+The package ships one ESM build (`esm/`) with type declarations.
+It has no CommonJS build. Version 1 shipped one in `cjs/`, and version 2 removed it.
+
+Load it with `import`.
+`require('id-vault')` also works on node 20.19 to 20.x, and on 22.12 and later.
+Those versions load an ES module through `require()`, and the package has no top-level `await`.
+Node 21 and 22.0 to 22.11 need the `--experimental-require-module` flag for that.
 
 The `exports` map has no `browser` condition, because node and browsers resolve the same files.
 

@@ -68,22 +68,24 @@ function expectNoNodeCrypto(code: string) {
 	expect(code).not.toMatch(/["'](node:)?crypto["']|\bcreateHash\(|__vite-browser-external/)
 }
 
-it('ships LICENSE and the build, and no spec files', () => {
+it('ships LICENSE and the ESM build, and no CommonJS build or spec files', () => {
 	const files = execFileSync('tar', ['-tzf', tarball], { encoding: 'utf8' })
 		.split('\n')
 		.filter(Boolean)
 		.map((f) => f.replace(/^package\//, ''))
 	expect(files).toEqual(
-		expect.arrayContaining(['LICENSE', 'README.md', 'package.json', 'cjs/index.js', 'esm/index.js'])
+		expect.arrayContaining(['LICENSE', 'README.md', 'package.json', 'esm/index.js', 'esm/index.d.ts'])
 	)
+	expect(files.filter((f) => f.startsWith('cjs/'))).toEqual([])
 	expect(files.filter((f) => /\.spec\./.test(f))).toEqual([])
 	expect(files.filter((f) => /encoder/.test(f))).toEqual([])
 })
 
-it('depends on @noble/hashes and not on crypto-js', async () => {
+it('depends on @noble/hashes and not on crypto-js, and exports only the ESM build', async () => {
 	const pkg = JSON.parse(await readFile(join(installed, 'package.json'), 'utf8'))
 	expect(Object.keys(pkg.dependencies)).toEqual(['@noble/hashes'])
-	expect(JSON.stringify(pkg)).not.toMatch(/crypto-js|"browser"/)
+	expect(JSON.stringify(pkg)).not.toMatch(/crypto-js|"browser"|"require"|cjs/)
+	expect(pkg.exports).toEqual({ '.': { types: './esm/index.d.ts', default: './esm/index.js' } })
 })
 
 it('a browser bundle importing the package has no node:crypto, and makes the same ID as node', async () => {
@@ -111,33 +113,23 @@ export const keys = createKeyVault()`
 	keys.assertKey(keys.createKey('store'))
 })
 
-it('a browser bundle requiring the package has no node:crypto', async () => {
-	const { code, modules } = await bundleForBrowser(
-		'main.cjs',
-		`const { createIDVault } = require('id-vault')
-module.exports = createIDVault`
-	)
-	expectNoNodeCrypto(code)
-	expect(modules).toEqual(expect.arrayContaining(['id-vault/cjs/token.js']))
-})
-
-it('node imports the ESM build', async () => {
-	const esm = await import(pathToFileURL(join(installed, 'esm/index.js')).href)
-	const id = esm.createIDVault(seed).createID('name')
-	expect(id).toBe(expectedID)
-	esm.createIDVault(seed).assertID(id)
-})
-
-it('node requires the built CJS entry, which makes and checks the same IDs', () => {
-	const require = createRequire(join(dir, 'main.cjs'))
-	expect(require.resolve('id-vault')).toBe(join(installed, 'cjs/index.js'))
-	const cjs = require('id-vault')
-	expect(Object.keys(cjs).sort()).toEqual(['MIN_SEED_BYTES', 'createIDVault', 'createKeyVault'])
-	const vault = cjs.createIDVault(seed)
+it('node imports the package by name, and resolves it to the ESM build', async () => {
+	await writeFile(join(dir, 'main.mjs'), `export * from 'id-vault'`)
+	const esm = await import(pathToFileURL(join(dir, 'main.mjs')).href)
+	expect(Object.keys(esm).sort()).toEqual(['MIN_SEED_BYTES', 'createIDVault', 'createKeyVault'])
+	const vault = esm.createIDVault(seed)
 	expect(vault.createID('name')).toBe(expectedID)
 	vault.assertID(expectedID)
 	expect(() => vault.assertID('name:0000')).toThrow('Detected invalid id: name:0000')
-	const keys = cjs.createKeyVault()
+	const keys = esm.createKeyVault()
 	keys.assertKey(keys.createKey('store'))
 	expect(() => keys.assertKey({ name: 'store' })).toThrow('Detected invalid key')
+})
+
+it('node can require() the ESM build, because it has no top-level await', () => {
+	// Node 20.19+ and 22.12+ load ESM through `require()`; the package has no `require` condition.
+	const require = createRequire(join(dir, 'main.cjs'))
+	expect(require.resolve('id-vault')).toBe(join(installed, 'esm/index.js'))
+	const vault = require('id-vault').createIDVault(seed)
+	expect(vault.createID('name')).toBe(expectedID)
 })
