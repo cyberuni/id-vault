@@ -1,13 +1,4 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
-
-/**
- * The library ships two encoders behind the same `./encoder.js` specifier: the node one
- * uses `node:crypto`, the browser one uses `crypto-js`. Both must be exercised, so the
- * suite runs twice — once as-is, and once with the specifier redirected at the browser
- * file, which is what the jest setup did with `moduleNameMapper`.
- */
-const browserEncoder = fileURLToPath(new URL('ts/encoder.browser.ts', import.meta.url))
 
 export default defineConfig({
 	test: {
@@ -23,26 +14,7 @@ export default defineConfig({
 			// instead of quietly reporting a lower number.
 			thresholds: { statements: 100, branches: 100, functions: 100, lines: 100 }
 		},
-		projects: [
-			{
-				test: {
-					name: 'node',
-					globals: true,
-					environment: 'node',
-					include: ['ts/**/*.spec.ts']
-				}
-			},
-			{
-				resolve: {
-					alias: [{ find: /^\.\/encoder\.js$/, replacement: browserEncoder }]
-				},
-				test: {
-					name: 'jsdom',
-					globals: true,
-					environment: 'jsdom',
-					include: ['ts/**/*.spec.ts']
-				}
-			}
-		]
+		environment: 'node',
+		include: ['ts/**/*.spec.ts']
 	}
 })

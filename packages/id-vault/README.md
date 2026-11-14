@@ -127,11 +127,17 @@ Any code that can reach `assertID` can disable the vault for everyone who shares
 
 The package ships ESM (`esm/`) and CommonJS (`cjs/`) builds with type declarations.
 
-The default encoder imports `node:crypto`.
-The package has no `browser` export condition, so a browser bundle resolves that same encoder.
-The import happens even when you pass your own `encode` function.
-A browser bundle needs a resolution or a stub for `node:crypto`.
-The package also ships a `crypto-js` encoder (`encoder.browser.js`), but the entry point does not use it.
+The default encoder depends on how the package is resolved.
+
+- Node, and any resolver without the `browser` condition, gets the encoder that uses `node:crypto`.
+- A bundler that resolves the `browser` export condition gets a build that uses `crypto-js` instead.
+  Vite, webpack 5, and esbuild with `platform: 'browser'` set that condition.
+
+Both encoders give the same SHA-256 hex digest.
+An ID made in node passes a browser vault with the same seed and scope.
+
+`crypto-js` has a guarded `require('crypto')` of its own.
+Its `browser` field maps `crypto` to an empty module, and its SHA-256 code does not use it.
 
 [downloads-image]: https://img.shields.io/npm/dm/id-vault.svg?style=flat
 [npm-image]: https://img.shields.io/npm/v/id-vault.svg?style=flat
