@@ -17,7 +17,7 @@ vi.mock('./constant_time_equal.js', async (importOriginal) => {
 const { createIDVault } = await import('./index.js')
 
 it('compares tokens with constantTimeEqual', () => {
-	const vault = createIDVault('seed')
+	const vault = createIDVault('seed-0123456789abcdef')
 	const id = vault.createID('name')
 	vault.assertID(id)
 	const token = id.slice('name:'.length)

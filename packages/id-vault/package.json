@@ -55,27 +55,26 @@
 		"nuke": "run-s clean && rimraf node_modules",
 		"test": "vitest run",
 		"typecheck": "tsc",
-		"verify": "npm-run-all clean -p build typecheck coverage depcheck",
+		"verify": "npm-run-all clean build -p typecheck coverage depcheck",
 		"watch": "vitest",
 		"w": "pnpm watch"
 	},
-	"dependencies": {
-		"crypto-js": "^4.2.0"
+	"engines": {
+		"node": ">= 20.19"
 	},
 	"devDependencies": {
-		"@types/crypto-js": "^4.2.2",
 		"@types/node": "^24.12.2",
 		"@vitest/coverage-v8": "^5.0.0",
 		"assertron": "^11.2.1",
 		"depcheck": "^1.4.7",
-		"jsdom": "^31.0.0",
 		"npm-run-all2": "^9.0.0",
 		"rimraf": "^6.0.1",
 		"tsdown": "^0.23.0",
 		"typescript": "^7.0.0",
+		"vite": "^8.3.6",
 		"vitest": "^5.0.0"
 	},
-	"engines": {
-		"node": ">= 18"
+	"dependencies": {
+		"@noble/hashes": "^2.4.0"
 	}
 }

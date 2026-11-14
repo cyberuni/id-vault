@@ -14,7 +14,7 @@ jobs:
       # sidesteps that workflow's unconditional Xvfb step, which has no counterpart on
       # the macOS and Windows runners.
       os: '["ubuntu-latest"]'
-      # No browser tests; the browser encoder is exercised under jsdom.
+      # No browser tests; ts/package.spec.ts bundles the packed tarball for the browser with Vite.
       skip-playwright: true
       # Codecov is not wired up here; a stale codecov context would just block merges.
       skip-codecov: true
