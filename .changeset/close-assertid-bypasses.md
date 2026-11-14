@@ -7,10 +7,9 @@
 Breaking changes:
 
 - A vault without a scope used to skip any ID with two or more `:`. It now checks the ID and throws if the token does not match. A scoped ID passed to it throws.
-- A scoped vault used to skip any ID that did not start with its scope. It now throws on those IDs, and the vault is disabled.
+- A scoped vault used to skip any ID that did not start with its scope. It now throws on those IDs.
 - `createIDVault(seed, { scope: '' })` throws a `TypeError`. It used to create an unscoped vault.
-- `assertID('')` now disables the vault, like every other invalid ID.
-- `createID` throws if a custom `encode` returns a token that contains `:`.
+- `assertID('')` is handled like every other invalid ID.
 
 If shared code checks IDs for several scoped vaults, pick the vault with the new `vault.isOwnID(id)` and reject an ID that no vault claims.
 
