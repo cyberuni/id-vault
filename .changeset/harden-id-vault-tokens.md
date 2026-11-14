@@ -13,7 +13,7 @@ Breaking changes:
 - An invalid ID no longer disables the vault. `assertID` throws and notifies the listeners on every invalid ID, and the vault keeps working. Pass `disableOnInvalid: true` to keep the 1.x behavior.
 - `onInvalidID` listeners run on every invalid ID, not only the first.
 - `createID` and `createIDVault` throw a `TypeError` on a name or scope that contains a lone surrogate. `assertID` rejects such an ID.
-- The package needs node 20.19 or later, because its hash dependency, `@noble/hashes`, is ESM only.
+- The package needs node 20.19 or later, the floor that its hash dependency, `@noble/hashes` 2.x, sets.
 - `crypto-js` is no longer a dependency. Node and browsers run the same `@noble/hashes` code, so a browser bundle no longer pulls in `node:crypto`.
 
 Additions:

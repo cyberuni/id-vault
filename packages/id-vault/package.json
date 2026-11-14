@@ -26,22 +26,13 @@
 	"type": "module",
 	"exports": {
 		".": {
-			"import": {
-				"types": "./esm/index.d.ts",
-				"default": "./esm/index.js"
-			},
-			"require": {
-				"types": "./cjs/index.d.ts",
-				"default": "./cjs/index.js"
-			},
+			"types": "./esm/index.d.ts",
 			"default": "./esm/index.js"
 		}
 	},
-	"main": "./cjs/index.js",
 	"module": "./esm/index.js",
-	"types": "./cjs/index.d.ts",
+	"types": "./esm/index.d.ts",
 	"files": [
-		"cjs",
 		"esm",
 		"ts",
 		"!**/*.{spec,unit,test,accept,integrate,system,perf,stress}.*"
@@ -49,7 +40,7 @@
 	"scripts": {
 		"build": "tsdown",
 		"build:watch": "tsdown --watch",
-		"clean": "rimraf cjs esm coverage --glob *.tsbuildinfo",
+		"clean": "rimraf esm coverage --glob *.tsbuildinfo",
 		"coverage": "vitest run --coverage",
 		"depcheck": "depcheck",
 		"nuke": "run-s clean && rimraf node_modules",
