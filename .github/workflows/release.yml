@@ -17,6 +17,10 @@ jobs:
     needs: code
     permissions:
       contents: read
+    with:
+      # 2.0.0 replaces crypto-js with @noble/hashes (see .research/id-vault-design).
+      # Remove this entry once 2.0.0 is published: the gate then sees it in the published version.
+      allowed-new-dependencies: '@noble/hashes'
 
   release:
     uses: cyberuni/.github/.github/workflows/pnpm-release-changeset-oidc.yml@main
