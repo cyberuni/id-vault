@@ -6,14 +6,14 @@ on:
 
 jobs:
   code:
-    uses: cyberuni/.github/.github/workflows/pnpm-verify.yml@main
+    uses: repobuddy/.github/.github/workflows/pnpm-verify.yml@v2
     with:
       os: '["ubuntu-latest"]'
       skip-playwright: true
       skip-codecov: true
 
   publish-gate:
-    uses: cyberuni/.github/.github/workflows/pnpm-publish-gate.yml@main
+    uses: repobuddy/.github/.github/workflows/pnpm-publish-gate.yml@v2
     needs: code
     permissions:
       contents: read
@@ -23,7 +23,7 @@ jobs:
       allowed-new-dependencies: '@noble/hashes'
 
   release:
-    uses: cyberuni/.github/.github/workflows/pnpm-release-changeset-oidc.yml@main
+    uses: repobuddy/.github/.github/workflows/pnpm-release-changeset-oidc.yml@v2
     needs: [code, publish-gate]
     permissions:
       id-token: write
