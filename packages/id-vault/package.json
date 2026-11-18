@@ -54,7 +54,7 @@
 		"node": ">= 20.19"
 	},
 	"devDependencies": {
-		"@types/node": "^24.12.2",
+		"@types/node": "^26.0.0",
 		"@vitest/coverage-v8": "^5.0.0",
 		"assertron": "^11.2.1",
 		"depcheck": "^1.4.7",
